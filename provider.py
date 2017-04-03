@@ -15,14 +15,17 @@ class Provider(ProviderInterface):
 
     def __init__(self, **kwargs):
 
-        self._ec2 = boto3.client('ec2')
+        self._client = boto3.client('ec2')
 
     @property
     def name(self):
         return 'ec2'
 
     def nodes(self):
-        raise NotImplementedError()
+        logger.debug('Listing EC2 nodes')
+        x = Dotdict(self._client.describe_instances())
+        logger.debug('Response: %s', x.ResponseMetadata.HTTPStatusCode)
+        return x.Reservations
 
     def secgroups(self):
         raise NotImplementedError()
