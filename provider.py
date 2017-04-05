@@ -22,6 +22,18 @@ class Provider(ProviderInterface):
         return 'ec2'
 
     def nodes(self):
+        """List the instances running on EC2
+
+        This is a result of querying the AWS API using
+        ``DescribeInstances`` and concatenating the ``Instances`` for
+        each ``Reservations`` entry.
+
+        See the **Response Structure** description in the `Boto3
+        EC2.Client.describe_instances()
+        <https://boto3.readthedocs.io/en/stable/reference/services/ec2.html#EC2.Client.describe_instances>`_
+        documentation.
+        """
+
         logger.debug('Listing EC2 nodes')
         x = Dotdict(self._client.describe_instances())
         logger.debug('Response: %s', x.ResponseMetadata.HTTPStatusCode)
