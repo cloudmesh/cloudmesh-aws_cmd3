@@ -49,7 +49,22 @@ class Provider(ProviderInterface):
             raise NotImplementedError(x.ResponseMetadata.HTTPStatusCode)
 
     def secgroups(self):
-        raise NotImplementedError()
+        """List the security groups
+
+        See `Boto3 EC2 Client describe_security_groups()
+        <https://boto3.readthedocs.io/en/stable/reference/services/ec2.html#EC2.Client.describe_security_groups>`_
+
+        """
+
+        logger.debug('Listing EC2 security groups')
+        x = Dotdict(self._client.describe_security_groups())
+        logger.debug('Response: %s', x.ResponseMetadata.HTTPStatusCode)
+
+        if x.ResponseMetadata.HTTPStatusCode == 200:
+            return [Result(sg.GroupId, sg) for sg in x.SecurityGroups]
+        else:
+            raise NotImplementedError(x.ResponseMetadata.HTTPStatusCode)
+
 
     def flavors(self):
         raise NotImplementedError()
