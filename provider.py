@@ -149,6 +149,10 @@ def test_provider():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level='DEBUG')
+    for name in 'requests botocore cloudmesh.aws.flavors'.split():
+        logging.getLogger(name).setLevel('INFO')
+
     p = Provider()
 
     print 'Nodes'
