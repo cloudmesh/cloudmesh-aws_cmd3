@@ -25,7 +25,16 @@ class Provider(ProviderInterface):
         logger.debug('Listing EC2 nodes')
         x = Dotdict(self._client.describe_instances())
         logger.debug('Response: %s', x.ResponseMetadata.HTTPStatusCode)
-        return x.Reservations
+        if x.ResponseMetadata.HTTPStatusCode == 200:
+            reservations = x.Reservations
+            instances = []
+            for r in reservations:
+                for i in r.Instances:
+                    result = Result(i.InstanceId, i)
+                    instances.append(result)
+            return instances
+        else:
+            raise NotImplementedError(x.ResponseMetadata.HTTPStatusCode)
 
     def secgroups(self):
         raise NotImplementedError()
