@@ -180,3 +180,8 @@ if __name__ == '__main__':
     for f in flavors[:min(10, len(flavors))]:
         print f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance
     print
+
+    print 'Addresses'
+    for a in p.addresses():
+        print a.id, a.attrs
+    print
