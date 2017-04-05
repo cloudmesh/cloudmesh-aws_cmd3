@@ -24,6 +24,17 @@ def get_table_2017_04_05(soup):
 
 
 def list_flavors(url='https://aws.amazon.com/ec2/instance-types', get_table=get_table_2017_04_05):
+    """List the available AWS EC2 flavors
+
+    The AWS API does not provide a method to list available instance
+    types.  This methods implements such a call by parsing the
+    **Instance Types Matrix** from the `webpage
+    <https://aws.amazon.com/ec2/instance-types/>`_.
+
+    :param str url: the url to parse
+    :param func get_table: callback to get the HTML table (as BeautifulSoup) to process
+
+    """
 
     logger.debug('Getting %s', url)
     page = urllib2.urlopen(url).read()
