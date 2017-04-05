@@ -148,3 +148,7 @@ if __name__ == '__main__':
         print n.id, n.ImageId, n.InstanceType, n.PrivateIpAddress, n.LaunchTime, n.KeyName
     print
 
+    print 'Security groups'
+    for g in p.secgroups():
+        print g.GroupName, g.Description
+    print
