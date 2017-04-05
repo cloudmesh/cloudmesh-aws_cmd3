@@ -160,3 +160,9 @@ if __name__ == '__main__':
     for g in p.secgroups():
         print g.GroupName, g.Description
     print
+
+    print 'Flavors'
+    flavors = p.flavors()
+    for f in flavors[:min(10, len(flavors))]:
+        print f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance
+    print
