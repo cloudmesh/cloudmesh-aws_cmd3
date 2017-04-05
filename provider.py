@@ -76,12 +76,22 @@ class Provider(ProviderInterface):
         flavors = Dotdict(list_flavors())
         return [Result(f.Instance_Type, Dotdict(f)) for f in flavors]
 
-
     def images(self):
         raise NotImplementedError()
 
     def addresses(self):
-        raise NotImplementedError()
+        """List Elastic IP address
+
+        """
+
+        logger.debug('Listing EC2 elastic IP addresses')
+        x = Dotdict(self._client.describe_addresses())
+        logger.debug('Response: %s', x.ResponseMetadata.HTTPStatusCode)
+
+        if x.ResponseMetadata.HTTPStatusCode == 200:
+            return [Result(a.PublicIp, a) for a in x.Addresses]
+        else:
+            raise NotImplementedError(x.ResponseMetadata.HTTPStatusCode)
 
     def networks(self):
         raise NotImplementedError()
