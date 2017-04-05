@@ -103,3 +103,12 @@ class Provider(ProviderInterface):
 def test_provider():
     Provider()
 
+
+if __name__ == '__main__':
+    p = Provider()
+
+    print 'Nodes'
+    for n in p.nodes():
+        print n.id, n.ImageId, n.InstanceType, n.PrivateIpAddress, n.LaunchTime, n.KeyName
+    print
+
