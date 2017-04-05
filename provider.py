@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from cloudmesh.api.provider import Provider as ProviderInterface
 from cloudmesh.api.provider import Result
+from cloudmesh.aws.flavors import list_flavors
 
 from cloudmesh.util import Dotdict
 
@@ -67,7 +68,14 @@ class Provider(ProviderInterface):
 
 
     def flavors(self):
-        raise NotImplementedError()
+        """List the available instance types
+
+        """
+
+        logger.debug('Listing EC2 instance types (flavors)')
+        flavors = Dotdict(list_flavors())
+        return [Result(f.Instance_Type, Dotdict(f)) for f in flavors]
+
 
     def images(self):
         raise NotImplementedError()
