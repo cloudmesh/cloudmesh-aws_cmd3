@@ -57,6 +57,7 @@ def _authorize_secgroup_rules(bound_method, **kwargs):
         bound_method(**kwargs)
     except boto3.exceptions.botocore.exceptions.ClientError as e:
         if e.message.endswith('already exists'):
+            logger.info('Rule already present')
             pass
         else:
             raise
@@ -331,11 +332,11 @@ def test_provider():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level='DEBUG')
+    logging.basicConfig(level='INFO', format='%(levelname)-9s %(message)s')
     for name in 'requests botocore cloudmesh.aws.flavors'.split():
         logging.getLogger(name).setLevel('INFO')
-    # for name in 'boto3'.split():
-    #     logging.getLogger(name).setLevel('WARNING')
+    for name in 'boto3 botocore'.split():
+        logging.getLogger(name).setLevel('WARNING')
 
     p = Provider()
     i = p._subnet.create_instances(ImageId='ami-c58c1dd3',
@@ -346,11 +347,11 @@ if __name__ == '__main__':
     ip = p._ec2.VpcAddress('eipalloc-2f96be1e')
     ip.associate(InstanceId=i.id)
 
-    # print 'Nodes'
-    # for n in p.nodes():
-    #     n = p._ec2.Instance(n.id)
-    #     print n.id, n.image_id, n.instance_type, n.private_ip_address, n.launch_time, n.key_name
-    # print
+    print 'Nodes'
+    for n in p.nodes():
+        n = p._ec2.Instance(n.id)
+        print n.id, n.image_id, n.instance_type, n.private_ip_address, n.launch_time, n.key_name
+    print
 
     # print 'Security groups'
     # for g in p.secgroups():
@@ -371,3 +372,7 @@ if __name__ == '__main__':
 
     # print 'Allocate'
     # p.allocate_node(name='hello', key='gambit', image='ami-49c9295f', flavor='m1.small')
+
+
+    # i.terminate()
+    # i.wait_until_terminated()
