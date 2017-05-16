@@ -1,13 +1,11 @@
 import boto3
 
-from collections import namedtuple
+from cloudmesh.aws.api.flavors import list_flavors
+from cloudmesh.aws.api.util import append_docstring
 
-from cloudmesh.api.provider import Provider as ProviderInterface
-from cloudmesh.api.provider import Result
-from cloudmesh.aws.flavors import list_flavors
-from cloudmesh.util import Dotdict
 
 from munch import munchify
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -118,7 +116,8 @@ def _initialize_ec2(ec2):
     if secgroup:
         logger.info('Found Security Group %s', secgroup.id)
     else:
-        secgroup = vpc.create_security_group(GroupName=SECGROUP_NAME, Description=SECGROUP_DESCRIPTION)
+        secgroup = vpc.create_security_group(GroupName=SECGROUP_NAME,
+                                             Description=SECGROUP_DESCRIPTION)
         _assign_tags(secgroup)
         logger.info('Created Security Group %s', secgroup.id)
 
@@ -151,7 +150,7 @@ def _initialize_ec2(ec2):
     return munchify(dict(vpc=vpc, gw=gw, rt=rt, subnet=subnet, secgroup=secgroup))
 
 
-class Provider(ProviderInterface):
+class Provider(object):
 
     def __init__(self, **kwargs):
 
@@ -185,8 +184,7 @@ class Provider(ProviderInterface):
         x = self._ec2.instances.all()
         instances = []
         for i in x:
-            result = Result(i.instance_id, dict(id=i.id))
-            instances.append(result)
+            instances.append(i)
         return instances
 
 
@@ -200,17 +198,15 @@ class Provider(ProviderInterface):
 
         logger.debug('Listing EC2 security groups')
         x = self._ec2.security_groups.all()
-        return [Result(sg.id, {}) for sg in x]
+        return [sg for sg in x]
 
 
+    @append_docstring(list_flavors.__doc__)
     def flavors(self):
-        """List the available instance types
-
-        """
 
         logger.debug('Listing EC2 instance types (flavors)')
-        flavors = Dotdict(list_flavors())
-        return [Result(f.Instance_Type, Dotdict(f)) for f in flavors]
+        flavors = list_flavors()
+        return [munchify(f) for f in flavors]
 
     def images(self):
         raise NotImplementedError()
@@ -221,7 +217,7 @@ class Provider(ProviderInterface):
         """
 
         logger.debug('Listing EC2 elastic IP addresses')
-        return [Result(a.allocation_id, {}) for a in self._ec2.vpc_addresses.all()]
+        return [a for a in self._ec2.vpc_addresses.all()]
 
     def networks(self):
         raise NotImplementedError()
@@ -272,7 +268,7 @@ class Provider(ProviderInterface):
         )
 
         assert len(xs) == 1, xs
-        return Result(xs[0].id, {})
+        return xs[0]
 
     def deallocate_node(self, ident):
         raise NotImplementedError()
@@ -326,9 +322,6 @@ class Provider(ProviderInterface):
 
 
 
-def test_provider():
-    Provider()
-
 
 if __name__ == '__main__':
     logging.basicConfig(level='INFO', format='%(levelname)-9s %(message)s')
@@ -340,23 +333,14 @@ if __name__ == '__main__':
     p = Provider()
     print 'Created provider'
 
-    # i = p._subnet.create_instances(ImageId='ami-c58c1dd3',
-    #                                MinCount=1, MaxCount=1,
-    #                                KeyName='gambit', InstanceType='t2.micro',
-    #                                SecurityGroupIds=[p._secgroup.id])[0]
-    # i.wait_until_running()
-    # ip = p._ec2.VpcAddress('eipalloc-2f96be1e')
-    # ip.associate(InstanceId=i.id)
 
     print 'Nodes'
     for n in p.nodes():
-        n = p._ec2.Instance(n.id)
         print n.id, n.image_id, n.instance_type, n.private_ip_address, n.launch_time, n.key_name
     print
 
     print 'Security groups'
     for g in p.secgroups():
-        g = p._ec2.SecurityGroup(g.id)
         print g.group_name, g.description
     print
 
@@ -368,13 +352,16 @@ if __name__ == '__main__':
 
     print 'Addresses'
     for a in p.addresses():
-        print a.id, a.attrs
+        print a.allocation_id, a.public_ip, a.private_ip_address
     print
 
     print 'Allocate'
     from socket import gethostname
-    r = p.allocate_node(name='hello', key=gethostname(), image='ami-c58c1dd3', flavor='t2.micro')
+    i = p.allocate_node(name='hello', key=gethostname(), image='ami-c58c1dd3', flavor='t2.micro')
 
-
-    # i.terminate()
-    # i.wait_until_terminated()
+    print 'Booted', i
+    i.wait_until_running()
+    print 'Running'
+    i.terminate()
+    print 'Terminated'
+    i.wait_until_terminated()
