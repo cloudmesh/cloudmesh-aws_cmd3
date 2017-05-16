@@ -221,14 +221,7 @@ class Provider(ProviderInterface):
         """
 
         logger.debug('Listing EC2 elastic IP addresses')
-        import pdb; pdb.set_trace()
-        x = Dotdict(self._client.describe_addresses())
-        logger.debug('Response: %s', x.ResponseMetadata.HTTPStatusCode)
-
-        if x.ResponseMetadata.HTTPStatusCode == 200:
-            return [Result(a.PublicIp, a) for a in x.Addresses]
-        else:
-            raise NotImplementedError(x.ResponseMetadata.HTTPStatusCode)
+        return [Result(a.allocation_id, {}) for a in self._ec2.vpc_addresses.all()]
 
     def networks(self):
         raise NotImplementedError()
@@ -245,6 +238,12 @@ class Provider(ProviderInterface):
         min_count = kwargs.pop('min_count', 1)
         max_count = kwargs.pop('max_count', 1)
 
+        # FIXME: `allocate_node` is constrained to a single instance for now
+        if not (min_count == 1 and max_count == 1):
+            msg = 'Node allocations are limited to single instances per all'
+            logger.critical(msg)
+            raise ValueError(msg)
+
         ################ sanity checks
         assert name is not None
         assert key is not None
@@ -254,7 +253,7 @@ class Provider(ProviderInterface):
 
         ################ boot
         logger.debug('Allocating EC2 node')
-        response = self._resource.create_instances(
+        xs = self._subnet.create_instances(
             DryRun=dry_run,
             MinCount=min_count,
             MaxCount=max_count,
@@ -272,8 +271,8 @@ class Provider(ProviderInterface):
             }],
         )
 
-        raise NotImplementedError()
-
+        assert len(xs) == 1, xs
+        return Result(xs[0].id, {})
 
     def deallocate_node(self, ident):
         raise NotImplementedError()
@@ -339,13 +338,15 @@ if __name__ == '__main__':
         logging.getLogger(name).setLevel('WARNING')
 
     p = Provider()
-    i = p._subnet.create_instances(ImageId='ami-c58c1dd3',
-                                   MinCount=1, MaxCount=1,
-                                   KeyName='gambit', InstanceType='t2.micro',
-                                   SecurityGroupIds=[p._secgroup.id])[0]
-    i.wait_until_running()
-    ip = p._ec2.VpcAddress('eipalloc-2f96be1e')
-    ip.associate(InstanceId=i.id)
+    print 'Created provider'
+
+    # i = p._subnet.create_instances(ImageId='ami-c58c1dd3',
+    #                                MinCount=1, MaxCount=1,
+    #                                KeyName='gambit', InstanceType='t2.micro',
+    #                                SecurityGroupIds=[p._secgroup.id])[0]
+    # i.wait_until_running()
+    # ip = p._ec2.VpcAddress('eipalloc-2f96be1e')
+    # ip.associate(InstanceId=i.id)
 
     print 'Nodes'
     for n in p.nodes():
@@ -353,25 +354,26 @@ if __name__ == '__main__':
         print n.id, n.image_id, n.instance_type, n.private_ip_address, n.launch_time, n.key_name
     print
 
-    # print 'Security groups'
-    # for g in p.secgroups():
-    #     g = p._ec2.SecurityGroup(g.id)
-    #     print g.group_name, g.description
-    # print
+    print 'Security groups'
+    for g in p.secgroups():
+        g = p._ec2.SecurityGroup(g.id)
+        print g.group_name, g.description
+    print
 
-    # print 'Flavors'
-    # flavors = p.flavors()
-    # for f in flavors[:min(10, len(flavors))]:
-    #     print f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance
-    # print
+    print 'Flavors'
+    flavors = p.flavors()
+    for f in flavors[:min(10, len(flavors))]:
+        print f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance
+    print
 
-    # print 'Addresses'
-    # for a in p.addresses():
-    #     print a.id, a.attrs
-    # print
+    print 'Addresses'
+    for a in p.addresses():
+        print a.id, a.attrs
+    print
 
-    # print 'Allocate'
-    # p.allocate_node(name='hello', key='gambit', image='ami-49c9295f', flavor='m1.small')
+    print 'Allocate'
+    from socket import gethostname
+    r = p.allocate_node(name='hello', key=gethostname(), image='ami-c58c1dd3', flavor='t2.micro')
 
 
     # i.terminate()
