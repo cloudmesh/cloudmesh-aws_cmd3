@@ -14,7 +14,16 @@ def list_flavors():
     print(Printer.list(flavors))
 
 
-def allocate_node(name='cloudmesh', image='ami-c58c1dd3', flavor='t2.micro', key=gethostname()):
+def allocate_node(image=None, flavor=None, key=None, public_ip=None):
+
+    # default kwargs can't be used due to docopt
+
+    name      = 'cloudmesh'
+    image     = image      or 'ami-c58c1dd3'
+    flavor    = flavor     or 't2.micro'
+    key       = key        or gethostname()
+    public_ip = public_ip  or False
+
     p = Provider()
     node = p.allocate_node(name=name, key=key, image=image, flavor=flavor)
     print('Booted', node.id)
