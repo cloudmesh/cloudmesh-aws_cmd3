@@ -16,9 +16,9 @@ def list_flavors():
     #     print(f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance)
 
 
-def allocate_node(image='ami-c58c1dd3', flavor='t2.micro', key=gethostname()):
+def allocate_node(name='cloudmesh', image='ami-c58c1dd3', flavor='t2.micro', key=gethostname()):
     p = Provider()
-    p.allocate_node(name='hello', key=gethostname(), image='ami-c58c1dd3', flavor='t2.micro')
+    p.allocate_node(name=name, key=key, image=image, flavor=flavor)
 
 
 def deallocate_node(id):
