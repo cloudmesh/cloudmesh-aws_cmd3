@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 
+from cloudmesh.common.Printer import Printer
 from cloudmesh.shell.command import PluginCommand, command
 
 from ..api.provider import Provider
@@ -10,8 +11,9 @@ from socket import gethostname
 def list_flavors():
     p = Provider()
     flavors = p.flavors()
-    for f in flavors:
-        print(f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance)
+    print(Printer.list(flavors))
+    # for f in flavors:
+    #     print(f.Instance_Type, f.vCPU, f.Memory, f.Storage, f.Networking_Performance)
 
 
 def allocate_node(image='ami-c58c1dd3', flavor='t2.micro', key=gethostname()):
