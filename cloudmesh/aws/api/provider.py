@@ -271,7 +271,8 @@ class Provider(object):
         return xs[0]
 
     def deallocate_node(self, ident):
-        raise NotImplementedError()
+        node = self._ec2.Instance(ident)
+        node.terminate()
 
     def get_node(self, ident):
         raise NotImplementedError()

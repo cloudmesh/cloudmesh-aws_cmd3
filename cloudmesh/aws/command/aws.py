@@ -21,8 +21,8 @@ def allocate_node(name='cloudmesh', image='ami-c58c1dd3', flavor='t2.micro', key
 
 def deallocate_node(id):
     p = Provider()
-    i = p._ec2.Instance(id)
-    i.terminate()
+    p.deallocate_node(id)
+
 
 
 class AwsCommand(PluginCommand):
