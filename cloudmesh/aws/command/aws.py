@@ -12,9 +12,12 @@ from socket import gethostname
 class AwsActions(object):
 
 
+    def __init__(self, **kwargs):
+        self._provider = Provider(**kwargs)
+
+
     def list_flavors(self):
-        p = Provider()
-        flavors = p.flavors()
+        flavors = self._provider.flavors()
         print(Printer.list(flavors))
 
 
@@ -28,13 +31,12 @@ class AwsActions(object):
         key       = key        or gethostname()
         public_ip = public_ip  or False
 
-        p = Provider()
-        node = p.allocate_node(name=name, key=key, image=image, flavor=flavor)
+        node = self._provider.allocate_node(name=name, key=key, image=image, flavor=flavor)
         print('Booted', node.id)
 
         if public_ip:
             addr = None
-            for a in p.addresses():
+            for a in self._provider.addresses():
                 if not a.instance_id:
                     print('Using old ip', a.public_ip)
                     addr = a
@@ -42,7 +44,7 @@ class AwsActions(object):
 
             if not addr:
                 print('Allocating new ip')
-                addr = p.allocate_ip()
+                addr = self._provider.allocate_ip()
 
             print('Waiting for node')
             node.wait_until_running()
@@ -52,14 +54,12 @@ class AwsActions(object):
 
 
     def deallocate_node(self, id):
-        p = Provider()
-        p.deallocate_node(id)
+        self._provider.deallocate_node(id)
 
 
     def list_nodes(self):
-        p = Provider()
         nodes = []
-        for n in p.nodes():
+        for n in self._provider.nodes():
             d = {}
             d['id'] = n.id
             d['key'] = n.key_name
@@ -85,7 +85,14 @@ class AwsCommand(PluginCommand):
                aws delete --id=ID
         """
 
-        aws = AwsActions()
+        cfg = Config()
+        auth = cfg.cloud('aws')
+
+        aws = AwsActions(
+            aws_access_key_id=auth['credentials']['EC2_ACCESS_KEY'],
+            aws_secret_access_key=auth['credentials']['EC2_SECRET_KEY'],
+            region_name=auth['default']['location'],
+        )
 
         if arguments['nodes']:
             aws.list_nodes()

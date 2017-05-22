@@ -154,8 +154,8 @@ class Provider(object):
 
     def __init__(self, **kwargs):
 
-        self._client = boto3.client('ec2')
-        self._ec2 = boto3.resource('ec2')
+        self._client = boto3.client('ec2', **kwargs)
+        self._ec2 = boto3.resource('ec2', **kwargs)
         x = _initialize_ec2(self._ec2)
         self._vpc = x.vpc
         self._gateway = x.gw
