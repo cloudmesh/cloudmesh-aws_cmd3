@@ -28,6 +28,24 @@ def allocate_node(image=None, flavor=None, key=None, public_ip=None):
     node = p.allocate_node(name=name, key=key, image=image, flavor=flavor)
     print('Booted', node.id)
 
+    if public_ip:
+        addr = None
+        for a in p.addresses():
+            if not a.instance_id:
+                print('Using old ip', a.public_ip)
+                addr = a
+                break
+
+        if not addr:
+            print('Allocating new ip')
+            addr = p.allocate_ip()
+
+        print('Waiting for node')
+        node.wait_until_running()
+        print('Associating public ip', addr.public_ip)
+        addr.associate(InstanceId=node.id)
+
+
 
 def deallocate_node(id):
     p = Provider()
@@ -43,7 +61,7 @@ class AwsCommand(PluginCommand):
         ::
             Usage:
                aws flavors
-               aws boot [--image=IMAGE] [--flavor=FLAVOR] [--key=KEY]
+               aws boot [--image=IMAGE] [--flavor=FLAVOR] [--key=KEY] [--public-ip]
                aws delete --id=ID
         """
 
@@ -55,7 +73,8 @@ class AwsCommand(PluginCommand):
             allocate_node(
                 image=arguments['--image'],
                 flavor=arguments['--flavor'],
-                key=arguments['--key'])
+                key=arguments['--key'],
+                public_ip=arguments['--public-ip'])
 
         elif arguments['delete']:
             deallocate_node(

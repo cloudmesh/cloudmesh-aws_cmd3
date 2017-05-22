@@ -154,6 +154,7 @@ class Provider(object):
 
     def __init__(self, **kwargs):
 
+        self._client = boto3.client('ec2')
         self._ec2 = boto3.resource('ec2')
         x = _initialize_ec2(self._ec2)
         self._vpc = x.vpc
@@ -286,7 +287,9 @@ class Provider(object):
     ################################ images
 
     def allocate_ip(self):
-        raise NotImplementedError()
+        d = self._client.allocate_address(Domain='vpc')
+        d = munchify(d)
+        return self._ec2.VpcAddress(d.AllocationId)
 
     def deallocate_ip(self, ident):
         raise NotImplementedError()
