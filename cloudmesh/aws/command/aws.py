@@ -52,6 +52,22 @@ def deallocate_node(id):
     p.deallocate_node(id)
 
 
+def list_nodes():
+    p = Provider()
+    nodes = []
+    for n in p.nodes():
+        d = {}
+        d['id'] = n.id
+        d['key'] = n.key_name
+        d['image_id'] = n.image_id
+        d['private_ip'] = n.private_ip_address
+        d['public_ip'] = n.public_ip_address
+        d['state'] = n.state['Name']
+        nodes.append(d)
+
+    print(Printer.list(nodes))
+
+
 
 class AwsCommand(PluginCommand):
 
@@ -60,13 +76,16 @@ class AwsCommand(PluginCommand):
         """
         ::
             Usage:
+               aws nodes
                aws flavors
                aws boot [--image=IMAGE] [--flavor=FLAVOR] [--key=KEY] [--public-ip]
                aws delete --id=ID
         """
 
+        if arguments['nodes']:
+            list_nodes()
 
-        if arguments['flavors']:
+        elif arguments['flavors']:
             list_flavors()
 
         elif arguments['boot']:
