@@ -230,7 +230,7 @@ class Provider(object):
 
 
         ################ parameter massages
-        security_groups = security_groups or []
+        security_groups = security_groups or ['cloudmesh']
         min_count = kwargs.pop('min_count', 1)
         max_count = kwargs.pop('max_count', 1)
 
@@ -247,6 +247,12 @@ class Provider(object):
         assert flavor is not None
         assert type(security_groups) is list, security_groups
 
+        ################ lookup security groups by name
+        secgroups = list(self._ec2.security_groups.filter(
+            Filters=[{'Name': 'tag:Name', 'Values': security_groups}]
+        ))
+        secgroups = [sg.id for sg in secgroups]
+
         ################ boot
         logger.debug('Allocating EC2 node')
         xs = self._subnet.create_instances(
@@ -255,7 +261,7 @@ class Provider(object):
             MaxCount=max_count,
             ImageId=image,
             KeyName=key,
-            SecurityGroupIds=security_groups,
+            SecurityGroupIds=secgroups,
             InstanceType=flavor,
             TagSpecifications=[{
                 'ResourceType': 'instance',
