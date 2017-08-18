@@ -154,7 +154,8 @@ class Provider(object):
 
     def __init__(self, **kwargs):
 
-        self._ec2 = boto3.resource('ec2')
+        self._client = boto3.client('ec2', **kwargs)
+        self._ec2 = boto3.resource('ec2', **kwargs)
         x = _initialize_ec2(self._ec2)
         self._vpc = x.vpc
         self._gateway = x.gw
@@ -230,7 +231,7 @@ class Provider(object):
 
 
         ################ parameter massages
-        security_groups = security_groups or []
+        security_groups = security_groups or ['cloudmesh']
         min_count = kwargs.pop('min_count', 1)
         max_count = kwargs.pop('max_count', 1)
 
@@ -247,6 +248,12 @@ class Provider(object):
         assert flavor is not None
         assert type(security_groups) is list, security_groups
 
+        ################ lookup security groups by name
+        secgroups = list(self._ec2.security_groups.filter(
+            Filters=[{'Name': 'tag:Name', 'Values': security_groups}]
+        ))
+        secgroups = [sg.id for sg in secgroups]
+
         ################ boot
         logger.debug('Allocating EC2 node')
         xs = self._subnet.create_instances(
@@ -255,7 +262,7 @@ class Provider(object):
             MaxCount=max_count,
             ImageId=image,
             KeyName=key,
-            SecurityGroupIds=security_groups,
+            SecurityGroupIds=secgroups,
             InstanceType=flavor,
             TagSpecifications=[{
                 'ResourceType': 'instance',
@@ -280,7 +287,9 @@ class Provider(object):
     ################################ images
 
     def allocate_ip(self):
-        raise NotImplementedError()
+        d = self._client.allocate_address(Domain='vpc')
+        d = munchify(d)
+        return self._ec2.VpcAddress(d.AllocationId)
 
     def deallocate_ip(self, ident):
         raise NotImplementedError()
